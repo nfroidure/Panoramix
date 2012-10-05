@@ -3,6 +3,8 @@ Panoramix
 
 Create panoramas using Accelerometer + WebRTC MediaStream APIs. It's GNU/GPL.
 
+Test it (requires camera+WebRTC+Accelerometer) : https://app.ecogom.fr/github/nfroidure/Panoramix/master/index.html
+
 Contributors
 -------------
 * @nfroidure
