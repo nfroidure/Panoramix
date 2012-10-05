@@ -8,7 +8,7 @@ ecanvas.setAttribute('width',(sizeX*numFrames)+'px');
 ecanvas.setAttribute('height',sizeY+'px');
 document.body.appendChild(ecanvas);
 ectx= ecanvas.getContext('2d');
-ectx.fillStyle = "#ffff00";
+ectx.fillStyle = "#CCC";
 ectx.fillRect(0, 0, numFrames*sizeX, sizeY);
 ectx.fillStyle = "#fffff0";
 ecanvas.setAttribute('style','width:'+sizeX+'px;height:'+Math.round(sizeY/numFrames)+'px;position:absolute;z-index:3;bottom:0;left:0;');
