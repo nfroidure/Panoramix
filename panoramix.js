@@ -1,26 +1,28 @@
-var origGamma, origAlpha, origBeta, video, canvas, ctx, ecanvas, ectx, keepedAngle=0, keepedCountdown=5;
+
+var vOrientationTolerance=20, hOrientationTolerance=10, angleTolerance=10, numFrames=10, sizeX=(window.innerHeight/3>window.innerWidth/4?window.innerWidth:window.innerHeight/3*4), sizeY=(window.innerHeight/3<window.innerWidth/4?window.innerHeight:window.innerHeight/4*3), initialCountDown=5, cursorW=40, cursorH=20;
+var origGamma, origAlpha, origBeta, video, canvas, ctx, ecanvas, ectx, keepedAngle=0, keepedCountdown=initialCountDown, anglePace=Math.ceil(360/numFrames);
 
 // Creating canvas for previsualization & exportation
 ecanvas = document.createElement("canvas");
-ecanvas.setAttribute('width',(640*8)+'px');
-ecanvas.setAttribute('height',480+'px');
+ecanvas.setAttribute('width',(sizeX*numFrames)+'px');
+ecanvas.setAttribute('height',sizeY+'px');
 document.body.appendChild(ecanvas);
 ectx= ecanvas.getContext('2d');
 ectx.fillStyle = "#ffff00";
-ectx.fillRect(0, 0, 8*640, 480);
+ectx.fillRect(0, 0, numFrames*sizeX, sizeY);
 ectx.fillStyle = "#fffff0";
-ecanvas.setAttribute('style','width:'+(64*8)+'px;height:48px;position:absolute;z-index:3;bottom:0;right:0;');
-// Creation a video element to display cam
+ecanvas.setAttribute('style','width:'+sizeX+'px;height:'+Math.round(sizeY/numFrames)+'px;position:absolute;z-index:3;bottom:0;left:0;');
+// Creation a video element to display camera stream
 video = document.createElement("video");
 video.autoplay = true;
+video.setAttribute('style','width:'+sizeX+'px;height:'+sizeY+'px;position:absolute;z-index:1;top:0;left:0;');
 document.body.appendChild(video);
-// Creating a canvas element to display cursors
+// Creating a canvas element to display orientation helpers
 canvas = document.createElement("canvas");
 document.body.appendChild(canvas);
-video.setAttribute('style','width:640px;height:480px;position:absolute;z-index:1;top:0;left:0;');
-canvas.setAttribute('width','640px');
-canvas.setAttribute('height','480px');
-canvas.setAttribute('style','width:640px;height:480px;position:absolute;z-index:2;top:0;left:0;');
+canvas.setAttribute('width',sizeX+'px');
+canvas.setAttribute('height',sizeY+'px');
+canvas.setAttribute('style','width:'+sizeX+'px;height:'+sizeY+'px;position:absolute;z-index:2;top:0;left:0;');
 ctx= canvas.getContext('2d');
 
 // Getting cam stream
@@ -28,30 +30,28 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
     navigator.mozGetUserMedia || navigator.msGetUserMedia;
 window.URL = window.URL || window.webkitURL;
 
-navigator.getUserMedia({video: true}, function(localMediaStream) { 
-  video.src = window.URL.createObjectURL(localMediaStream);
-  //video.src = localMediaStream;
-  ctx.fillStyle = "#ffffff";
-  ctx.globalAlpha=0.5;
-  ctx.fillRect(300,230,40,20);
-  ctx.fillRect(0,239,640,2);
-}, function(error) {
-  console.log(error);
-});
+if(navigator.getUserMedia)
+	{
+	navigator.getUserMedia({video: true}, function(localMediaStream)
+		{
+		video.src = window.URL.createObjectURL(localMediaStream);
+		}, function(error)
+		{
+		console.log(error);
+		});
+	}
 
 // Getting device orientation
 window.addEventListener('deviceorientation', function(e)
 	{
 	if(ctx)
 		{
-		ctx.clearRect(0,0,640,480);
+		ctx.clearRect(0,0,sizeX,sizeY);
 		var portrait=(window.matchMedia&&window.matchMedia('(orientation: portrait)').matches);
-		ctx.fillStyle = "#ccc";
-		ctx.globalAlpha=1;
-		ctx.fillRect(295,225,50,30);
-		ctx.globalAlpha=0.5;
-		ctx.fillRect(0,239,640,2);
-		 ctx.fillStyle = "#000";
+		  ctx.fillStyle = "#CCC";
+		  ctx.globalAlpha=1;
+		  ctx.fillRect((sizeX/2)-((cursorW+hOrientationTolerance)/2),(sizeY/2)-((cursorH+vOrientationTolerance)/2),cursorW+hOrientationTolerance,cursorH+vOrientationTolerance);
+		  ctx.fillRect(0,(sizeY/2)-1,sizeX,2);
 		if(!origGamma)
 			{
 			origGamma=e.gamma;
@@ -60,16 +60,16 @@ window.addEventListener('deviceorientation', function(e)
 			}
 		
 		/* Setting the cursor position */
-		var pos=(640*(e.alpha/360));
+		//var pos=(sizeX*(e.alpha/360));
 		if(portrait)
 			{
-			var x=320+(320*(e.gamma/90)); // crap
-			var y=240+(240*((Math.abs(e.beta)-90)/90)); // crap
+			var x=(sizeX/2)+((sizeX/2)*(e.gamma/90)); // crap
+			var y=(sizeY/2)+((sizeY/2)*((Math.abs(e.beta)-90)/90)); // crap
 			}
 		else
 			{
-			var x=320+(Math.abs(e.beta)>90?(320*((180-Math.abs(e.beta))/180)):(320*((e.beta)/90))); // crap
-			var y=240+(240*(1-(Math.abs(e.gamma)/90))); // crap
+			var x=(sizeX/2)+(Math.abs(e.beta)>90?((sizeX/2)*((180-Math.abs(e.beta))/180)):((sizeX/2)*((e.beta)/90))); // crap
+			var y=(sizeY/2)+((sizeY/2)*(1-(Math.abs(e.gamma)/90))); // crap
 			}
 		/* Debug : printing cursor positions *
 		ctx.fillStyle = '#000000';
@@ -80,48 +80,53 @@ window.addEventListener('deviceorientation', function(e)
 		/* Debug : printing angle */
 		ctx.fillStyle = '#000000';
 		ctx.textBaseline='top';
-		ctx.textAlign='left';
+		ctx.textAlign='center';
 		ctx.font='30px Arial';
-		ctx.fillText(Math.round(e.alpha),10, 10,300);
+		ctx.fillText(Math.round(e.alpha),(sizeY/2), 0);
 		/* Setting the cursor look */
-		if(Math.round(e.alpha)%45>=40||Math.round(e.alpha)%45<=5) // Angle is ok
+		var angleOk=false, orientOk=false;
+		if(Math.round(e.alpha)%anglePace>=(anglePace-(angleTolerance/2))
+			||Math.round(e.alpha)%anglePace<=(angleTolerance/2)) // Angle is ok
+			angleOk=true;
+		if(
+			((!portrait)&&(Math.abs(Math.round(e.beta))>=180-(vOrientationTolerance/2)
+					||Math.abs(Math.round(e.beta))<=vOrientationTolerance/2)
+				&&(Math.abs(Math.round(e.gamma))>=90-(vOrientationTolerance/2)))
+			||(portrait&&(Math.abs(Math.round(e.beta))>=180-(vOrientationTolerance/2)
+					||Math.abs(Math.round(e.beta))<=vOrientationTolerance/2)
+				&&(Math.abs(Math.round(e.gamma))>=90-(vOrientationTolerance/2)))
+			) // Orientation is ok
+			orientOk=true;
+		if(angleOk&&orientOk)
 			{
-			if(
-				((!portrait)&&(Math.abs(Math.round(e.beta))>=160||Math.abs(Math.round(e.beta))<=20)
-					&&(Math.abs(Math.round(e.gamma))>=70))
-				||(portrait&&(Math.abs(Math.round(e.beta))>=160||Math.abs(Math.round(e.beta))<=20)
-					&&(Math.abs(Math.round(e.gamma))>=70))
-				) // Orientation is ok
-				{
-				ctx.fillStyle = '#00FF00';
-				if(keepedAngle==parseInt(Math.round(e.alpha)/45))
-					{ keepedCountdown--; }
-				else
-					{ keepedAngle=parseInt(Math.round(e.alpha)/45); keepedCountdown=5; }
-				if(keepedCountdown<=0) // Keeped position enought time
-					{
-					keepedCountdown=5;
-					ectx.drawImage(video, 0, 0, 640, 480, parseInt(Math.round(e.alpha)/45)*640, 0, 640, 480);
-					}
-				}
+			ctx.fillStyle = '#00FF00';
+			if(keepedAngle==parseInt(Math.round(e.alpha)/anglePace))
+				{ keepedCountdown--; }
 			else
+				{ keepedAngle=parseInt(Math.round(e.alpha)/anglePace); keepedCountdown=initialCountDown; }
+			if(keepedCountdown<=0) // Keeped position enought times
 				{
-				keepedCountdown=5;
-				ctx.fillStyle = '#FFFF00';
+				keepedCountdown=initialCountDown;
+				ectx.drawImage(video, 0, 0, sizeX, sizeY, parseInt(Math.round(e.alpha)/anglePace)*sizeX, 0, sizeX, sizeY);
 				}
 			}
 		else
 			{
-			keepedCountdown=5;
-			ctx.fillStyle = '#FF0000';
+			keepedCountdown=initialCountDown;
+			if(orientOk)
+				ctx.fillStyle = '#FFFF00';
+			else if(angleOk)
+				ctx.fillStyle = '#FF0000';
+			else
+				ctx.fillStyle = '#000000';
 			}
 		ctx.globalAlpha=0.8;
-		ctx.fillRect(Math.round(x)-20,Math.round(y)-10,40,20);
+		ctx.fillRect(Math.round(x)-(cursorW/2),Math.round(y)-(cursorH/2),cursorW,cursorH);
 		ctx.globalAlpha=1;
 		ctx.fillStyle = '#000';
 		ctx.font='30px Arial';
 		ctx.textBaseline='middle';
 		ctx.textAlign='center';
-		ctx.fillText((keepedCountdown<5?keepedCountdown:'X'),320, 240,200, 40);
+		ctx.fillText((keepedCountdown<initialCountDown?keepedCountdown:'X'),sizeX/2, sizeY/2,200, 40);
 		}
 	}, true);
